@@ -14,7 +14,7 @@ namespace NoSQLTest
 {
     class Program
     {
-        static string connectionString = "mongodb+srv://admin:admin@cluster0.jidoz.mongodb.net/nosqltest?retryWrites=true&w=majority";
+        static string connectionString = "mongodb://localhost:27017";
         static AppDbContext context;
         static IMongoDatabase database;
 
@@ -28,12 +28,20 @@ namespace NoSQLTest
             MongoClient client = new MongoClient(connectionString);
             database = client.GetDatabase("nosqltest");
 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            FindItems("Employees", new SearchQuery("Name", "ya"));
-            sw.Stop();
-            Console.WriteLine(sw.Elapsed);
+            long[] results = new long[100];
+            for (int i = 0; i < results.Length; i ++)
+            {
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                var items = GetAllItems("Employees");
+                sw.Stop();
+                results[i] = sw.ElapsedMilliseconds;
+            }
+            var average = results.Average();
+            Console.WriteLine($"Average = {average}");
 
+
+            Console.WriteLine("Finish");
             Console.ReadLine();
         }
 
@@ -50,6 +58,12 @@ namespace NoSQLTest
         {
             var items = FindItems(collectionName, searchQuery);
             items.ForEach(x => Console.WriteLine(x));
+        }
+
+        static List<BsonDocument> SortItems(string collecationName, string attrName)
+        {
+            var collection = database.GetCollection<BsonDocument>(collecationName);
+            return collection.Find(new BsonDocument()).Sort("{" + $"{attrName}" + ":1}").ToList();
         }
 
         static void FillEmployeesList()
@@ -79,13 +93,63 @@ namespace NoSQLTest
                     Modified = now,
                     CreatedBy = userName,
                     ModifiedBy = userName,
-                    EntityTypeId = employeesListId
+                    EntityTypeId = employeesListId,
+                    String1 = names[rnd.Next(4)],
+                    String2 = names[rnd.Next(4)],
+                    String3 = names[rnd.Next(4)],
+                    String4 = names[rnd.Next(4)],
+                    String5 = names[rnd.Next(4)],
+                    String6 = names[rnd.Next(4)],
+                    String7 = names[rnd.Next(4)],
+                    String8 = names[rnd.Next(4)],
+                    String9 = names[rnd.Next(4)],
+                    String10 = names[rnd.Next(4)],
+                    String11 = names[rnd.Next(4)],
+                    String12 = names[rnd.Next(4)],
+                    String13 = names[rnd.Next(4)],
+                    String14 = names[rnd.Next(4)],
+                    String15 = names[rnd.Next(4)],
+                    String16 = names[rnd.Next(4)],
+                    String17 = names[rnd.Next(4)],
+                    String18 = names[rnd.Next(4)],
+                    String19 = names[rnd.Next(4)],
+                    String20 = names[rnd.Next(4)],
+                    Int1 = ages[rnd.Next(4)],
+                    Int2 = ages[rnd.Next(4)],
+                    Int3 = ages[rnd.Next(4)],
+                    Int4 = ages[rnd.Next(4)],
+                    Int5 = ages[rnd.Next(4)],
+                    Int6 = ages[rnd.Next(4)],
+                    Int7 = ages[rnd.Next(4)],
+                    Int8 = ages[rnd.Next(4)],
+                    Int9 = ages[rnd.Next(4)],
+                    Int10 = ages[rnd.Next(4)],
+                    Int11 = ages[rnd.Next(4)],
+                    Int12 = ages[rnd.Next(4)],
+                    Int13 = ages[rnd.Next(4)],
+                    Int14 = ages[rnd.Next(4)],
+                    Int15 = ages[rnd.Next(4)],
+                    DateTime1 = bdays[rnd.Next(4)],
+                    DateTime2 = bdays[rnd.Next(4)],
+                    DateTime3 = bdays[rnd.Next(4)],
+                    DateTime4 = bdays[rnd.Next(4)],
+                    DateTime5 = bdays[rnd.Next(4)],
+                    DateTime6 = bdays[rnd.Next(4)],
+                    DateTime7 = bdays[rnd.Next(4)],
+                    DateTime8 = bdays[rnd.Next(4)],
+                    DateTime9 = bdays[rnd.Next(4)],
+                    DateTime10 = bdays[rnd.Next(4)],
+                    DateTime11 = bdays[rnd.Next(4)],
+                    DateTime12 = bdays[rnd.Next(4)],
+                    DateTime13 = bdays[rnd.Next(4)],
+                    DateTime14 = bdays[rnd.Next(4)],
+                    DateTime15 = bdays[rnd.Next(4)],
                 });
             }
 
             var employeesJson = JsonConvert.SerializeObject(employees);
 
-            AddItems(employeesListId, employeesJson);
+            AddItems("Employees", employeesJson);
         }
 
         static List<BsonDocument> FindItems(string collecationName, SearchQuery searchQuery)
@@ -96,7 +160,13 @@ namespace NoSQLTest
                 .Eq(searchQuery.AttributeInnerLabel, new BsonRegularExpression(searchQuery.Value));
 
             return collection.Find(filter).ToList();
-        }        
+        }
+
+        static List<BsonDocument> GetAllItems(string collecationName)
+        {
+            var collection = database.GetCollection<BsonDocument>(collecationName);
+            return collection.Find(_ => true).ToList();
+        }
 
         static List<BsonDocument> GetItems(string collectionName)
         {
@@ -128,11 +198,9 @@ namespace NoSQLTest
             return entity.ToString();
         }
 
-        static void AddItems(Guid listId, string jsonItems)
+        static void AddItems(string collectionName, string jsonItems)
         {
-            var list = context.EntityTypes.FirstOrDefault(x => x.Id == listId);
-
-            var collection = database.GetCollection<BsonDocument>(list.Label);
+            var collection = database.GetCollection<BsonDocument>(collectionName);
 
             var arrayDocs = BsonSerializer.Deserialize<BsonArray>(jsonItems);
             var documents = arrayDocs.Select(val => val.AsBsonDocument);
